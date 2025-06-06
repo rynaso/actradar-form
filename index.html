@@ -14,6 +14,7 @@
     }
 
     #formContainer {
+      width: 100%;
       margin-bottom: 10px;
     }
 
@@ -47,6 +48,13 @@
       z-index: 10;
     }
 
+    #downloadBtn, #updateBtn {
+      margin-top: 10px;
+      padding: 8px 12px;
+      font-size: 14px;
+      display: inline-block;
+    }
+
     .input-row {
       display: flex;
       justify-content: space-between;
@@ -57,14 +65,10 @@
       flex: 1;
     }
 
-    .input-row input, .input-row select {
+    .input-row select,
+    .input-row input[type="text"],
+    .input-row input[type="email"] {
       width: 60%;
-    }
-
-    button {
-      margin-top: 10px;
-      padding: 8px 12px;
-      font-size: 14px;
     }
   </style>
 </head>
@@ -169,11 +173,14 @@
                 color: (ctx) => labelColors[ctx.chart.data.labels[ctx.index]],
                 font: { size: 14, weight: 'bold' }
               },
-              grid: { color: '#ccc', circular: true },
+              grid: {
+                color: '#ccc',
+                circular: true
+              },
               angleLines: { color: '#ccc' }
             }
           },
-          layout: { padding: 0 },
+          layout: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
           elements: {
             line: { borderWidth: 3, tension: 0 },
             point: { radius: 5 * scaleMultiplier }
@@ -201,13 +208,15 @@
       }
 
       drawChart(scores);
-      
-      // Replace with your Google Apps Script URL
-      fetch('https://SCRIPT_ID_HERE/exec', {
-        method: 'POST',
-        body: JSON.stringify({ email, project, scores }),
-        headers: { 'Content-Type': 'application/json' }
-      }).then(res => res.text()).then(console.log).catch(console.error);
+
+      fetch("https://script.google.com/macros/s/AKfycbyGesnk0Z9KFNvhdna4nQ8s-rh2lpG-5HfgOncwnnecEeVGnNRNut54M80cX3rpsHAudw/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, project, scores })
+      })
+      .then(response => response.text())
+      .then(data => alert("Data submitted successfully!"))
+      .catch(err => alert("Submission failed."));
     });
 
     document.getElementById("downloadBtn").addEventListener("click", function (e) {
