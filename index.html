@@ -209,11 +209,11 @@
 
       drawChart(scores);
 
-      fetch("https://script.google.com/macros/s/AKfycbyGesnk0Z9KFNvhdna4nQ8s-rh2lpG-5HfgOncwnnecEeVGnNRNut54M80cX3rpsHAudw/exec", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, project, scores })
-      })
+      fetch("https://script.google.com/macros/s/AKfycbyIHD-515FYf-FoKMvtwh6y8helotiHBPD766uEyyDiyz8Qmm-uRnzV7p9S6qrPHdEqng/exec", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email, project, scores })
+})
       .then(response => response.text())
       .then(data => alert("Data submitted successfully!"))
       .catch(err => alert("Submission failed."));
