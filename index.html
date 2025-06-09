@@ -210,25 +210,25 @@
       drawChart(scores);
 
       fetch("https://script.google.com/macros/s/AKfycbysOTAgcHzVotjV3IuN5FFOH_hjccBNofymLv9kglrCzVkRnCG_Vy1fL_Vd10BLuj1G/exec", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-body: JSON.stringify({
-  userEmail: email,
-  projectName: project,
-  Capability: scores[0],
-  Motivation: scores[1],
-  Connectivity: scores[2],
-  Segmentation: scores[3],
-  Influence: scores[4],
-  Norms: scores[5],
-  Processes: scores[6],
-  Governance: scores[7],
-  Resources: scores[8]
-})
-})
-      .then(response => response.text())
-      .then(data => alert("Data submitted successfully!"))
-      .catch(err => alert("Submission failed."));
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userEmail: email,
+          projectName: project,
+          Capability: scores[0],
+          Motivation: scores[1],
+          Connectivity: scores[2],
+          Segmentation: scores[3],
+          Influence: scores[4],
+          Norms: scores[5],
+          Processes: scores[6],
+          Governance: scores[7],
+          Resources: scores[8]
+        })
+      });
+
+      alert("Your scores have been submitted!");
     });
 
     document.getElementById("downloadBtn").addEventListener("click", function (e) {
