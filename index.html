@@ -231,20 +231,39 @@
       alert("Your scores have been submitted!");
     });
 
-    document.getElementById("downloadBtn").addEventListener("click", function (e) {
-      e.preventDefault();
-      const originalScores = getScoresFromForm();
-      const scaledScores = originalScores.map(score => score * 1.3);
-      drawChart(scaledScores, true, 1.5);
-      setTimeout(() => {
-        const chartCanvas = document.getElementById("radarChart");
-        const link = document.createElement("a");
-        link.download = "radar_chart.png";
-        link.href = chartCanvas.toDataURL("image/png");
-        link.click();
-        drawChart(originalScores, false);
-      }, 300);
-    });
+document.getElementById("downloadBtn").addEventListener("click", function (e) {
+  e.preventDefault();
+  const originalScores = getScoresFromForm();
+  const scaledScores = originalScores.map(score => score * 1.3);
+  drawChart(scaledScores, true, 1.5);
+
+  setTimeout(() => {
+    const chartCanvas = document.getElementById("radarChart");
+
+    // Create a new canvas with white background
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = chartCanvas.width;
+    tempCanvas.height = chartCanvas.height;
+    const tempCtx = tempCanvas.getContext("2d");
+
+    // Fill background with white
+    tempCtx.fillStyle = "#ffffff";
+    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+    // Draw chart image over it
+    tempCtx.drawImage(chartCanvas, 0, 0);
+
+    // Create download link
+    const link = document.createElement("a");
+    link.download = "radar_chart.png";
+    link.href = tempCanvas.toDataURL("image/png");
+    link.click();
+
+    // Restore original chart
+    drawChart(originalScores, false);
+  }, 300);
+});
+
   </script>
 </body>
 </html>
