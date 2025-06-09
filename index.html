@@ -57,18 +57,24 @@
 
     .input-row {
       display: flex;
-      justify-content: space-between;
-      margin-bottom: 6px;
+      flex-direction: column;
+      margin-bottom: 10px;
     }
 
     .input-row label {
-      flex: 1;
+      margin-bottom: 4px;
     }
 
-    .input-row select,
     .input-row input[type="text"],
-    .input-row input[type="email"] {
-      width: 60%;
+    .input-row input[type="email"],
+    .input-row select {
+      width: 100%;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 0.9em;
+      margin-top: 2px;
     }
   </style>
 </head>
@@ -79,10 +85,12 @@
     <div class="input-row">
       <label for="userEmail">Your Email:</label>
       <input type="email" id="userEmail" name="userEmail" required />
+      <div id="emailError" class="error-message"></div>
     </div>
     <div class="input-row">
       <label for="projectName">Project Name:</label>
       <input type="text" id="projectName" name="projectName" />
+      <div id="projectError" class="error-message"></div>
     </div>
     <form id="scoreForm"></form>
     <button id="updateBtn">Update Chart</button>
@@ -197,77 +205,73 @@
 
     document.getElementById("updateBtn").addEventListener("click", function (e) {
       e.preventDefault();
+
       const email = document.getElementById("userEmail").value.trim();
       const project = document.getElementById("projectName").value.trim();
       const scores = getScoresFromForm();
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Clear previous messages
-document.getElementById("emailError").textContent = "";
+      // Clear old messages
+      document.getElementById("emailError").textContent = "";
+      document.getElementById("projectError").textContent = "";
 
-if (!emailPattern.test(email)) {
-  document.getElementById("emailError").textContent = "Please enter a valid email address.";
-  return;
-}
+      let hasError = false;
 
+      if (!emailPattern.test(email)) {
+        document.getElementById("emailError").textContent = "Please enter a valid email address.";
+        hasError = true;
+      }
+      if (!project) {
+        document.getElementById("projectError").textContent = "Please enter a project name.";
+        hasError = true;
+      }
+
+      if (hasError) return;
 
       drawChart(scores);
+
+      const params = new URLSearchParams();
+      params.append("userEmail", email);
+      params.append("projectName", project);
+      labels.forEach((label, i) => {
+        params.append(label, scores[i]);
+      });
 
       fetch("https://script.google.com/macros/s/AKfycbysOTAgcHzVotjV3IuN5FFOH_hjccBNofymLv9kglrCzVkRnCG_Vy1fL_Vd10BLuj1G/exec", {
         method: "POST",
         mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userEmail: email,
-          projectName: project,
-          Capability: scores[0],
-          Motivation: scores[1],
-          Connectivity: scores[2],
-          Segmentation: scores[3],
-          Influence: scores[4],
-          Norms: scores[5],
-          Processes: scores[6],
-          Governance: scores[7],
-          Resources: scores[8]
-        })
+        body: params
       });
 
-      alert("Your scores have been submitted!");
+      // Optional: console feedback
+      console.log("Submission successful");
     });
 
-document.getElementById("downloadBtn").addEventListener("click", function (e) {
-  e.preventDefault();
-  const originalScores = getScoresFromForm();
-  const scaledScores = originalScores.map(score => score * 1.3);
-  drawChart(scaledScores, true, 1.5);
+    document.getElementById("downloadBtn").addEventListener("click", function (e) {
+      e.preventDefault();
+      const originalScores = getScoresFromForm();
+      const scaledScores = originalScores.map(score => score * 1.3);
+      drawChart(scaledScores, true, 1.5);
 
-  setTimeout(() => {
-    const chartCanvas = document.getElementById("radarChart");
+      setTimeout(() => {
+        const chartCanvas = document.getElementById("radarChart");
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = chartCanvas.width;
+        tempCanvas.height = chartCanvas.height;
+        const tempCtx = tempCanvas.getContext("2d");
 
-    // Create a new canvas with white background
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = chartCanvas.width;
-    tempCanvas.height = chartCanvas.height;
-    const tempCtx = tempCanvas.getContext("2d");
+        tempCtx.fillStyle = "#ffffff";
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        tempCtx.drawImage(chartCanvas, 0, 0);
 
-    // Fill background with white
-    tempCtx.fillStyle = "#ffffff";
-    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        const link = document.createElement("a");
+        link.download = "radar_chart.png";
+        link.href = tempCanvas.toDataURL("image/png");
+        link.click();
 
-    // Draw chart image over it
-    tempCtx.drawImage(chartCanvas, 0, 0);
-
-    // Create download link
-    const link = document.createElement("a");
-    link.download = "radar_chart.png";
-    link.href = tempCanvas.toDataURL("image/png");
-    link.click();
-
-    // Restore original chart
-    drawChart(originalScores, false);
-  }, 300);
-});
-
+        drawChart(originalScores, false);
+      }, 300);
+    });
   </script>
 </body>
 </html>
