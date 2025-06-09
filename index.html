@@ -209,10 +209,10 @@
 
       drawChart(scores);
 
-      fetch("https://script.google.com/macros/s/AKfycbz3m9uQ26QTxzpBNIkzfX_Hie6iWN4fUdUu-LVOrwTUpchdJPXYqRXspoG4KjdGSpKg/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbysOTAgcHzVotjV3IuN5FFOH_hjccBNofymLv9kglrCzVkRnCG_Vy1fL_Vd10BLuj1G/exec", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
+body: JSON.stringify({
   userEmail: email,
   projectName: project,
   Capability: scores[0],
