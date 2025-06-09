@@ -209,10 +209,22 @@
 
       drawChart(scores);
 
-      fetch("https://script.google.com/macros/s/AKfycbyIHD-515FYf-FoKMvtwh6y8helotiHBPD766uEyyDiyz8Qmm-uRnzV7p9S6qrPHdEqng/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbz3m9uQ26QTxzpBNIkzfX_Hie6iWN4fUdUu-LVOrwTUpchdJPXYqRXspoG4KjdGSpKg/exec", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ email, project, scores })
+  body: JSON.stringify({
+  userEmail: email,
+  projectName: project,
+  Capability: scores[0],
+  Motivation: scores[1],
+  Connectivity: scores[2],
+  Segmentation: scores[3],
+  Influence: scores[4],
+  Norms: scores[5],
+  Processes: scores[6],
+  Governance: scores[7],
+  Resources: scores[8]
+})
 })
       .then(response => response.text())
       .then(data => alert("Data submitted successfully!"))
