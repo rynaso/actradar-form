@@ -1,180 +1,286 @@
-<script>
-  const labels = [
-    "Capability", "Motivation", "Connectivity", "Segmentation",
-    "Influence", "Norms", "Processes", "Governance", "Resources"
-  ];
-
-  const labelColors = {
-    "Capability": "#F4B5A1",
-    "Motivation": "#F4B5A1",
-    "Connectivity": "#90A4B5",
-    "Segmentation": "#90A4B5",
-    "Influence": "#90A4B5",
-    "Norms": "#93AB94",
-    "Processes": "#93AB94",
-    "Governance": "#93AB94",
-    "Resources": "#93AB94"
-  };
-
-  const form = document.getElementById("scoreForm");
-  labels.forEach(label => {
-    const row = document.createElement("div");
-    row.className = "input-row";
-    const select = document.createElement("select");
-    select.name = label;
-    for (let i = 1; i <= 5; i++) {
-      const opt = document.createElement("option");
-      opt.value = i;
-      opt.textContent = i;
-      select.appendChild(opt);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ACT Radar Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: auto;
+      max-width: 600px;
     }
-    const labelEl = document.createElement("label");
-    labelEl.textContent = label;
-    labelEl.htmlFor = label;
-    row.appendChild(labelEl);
-    row.appendChild(select);
-    form.appendChild(row);
-  });
 
-  const ctx = document.getElementById("radarChart").getContext("2d");
-  let radarChart;
+    #formContainer {
+      width: 100%;
+      margin-bottom: 10px;
+    }
 
-  function getScoresFromForm() {
-    return labels.map(label => parseFloat(document.querySelector(`select[name='${label}']`).value));
-  }
+    #chartContainer {
+      width: 100%;
+      max-width: 600px;
+      height: 600px;
+      position: relative;
+      margin: 0 auto;
+    }
 
-  function drawChart(scores, showLabels = false, scaleMultiplier = 1) {
-    if (radarChart) radarChart.destroy();
-    radarChart = new Chart(ctx, {
-      type: 'radar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Your Scores',
-          data: scores,
-          fill: true,
-          backgroundColor: 'rgba(68, 68, 68, 0.3)',
-          borderColor: '#444444',
-          pointBackgroundColor: labels.map(label => labelColors[label]),
-          pointBorderColor: '#444444',
-          pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: labels.map(label => labelColors[label])
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          r: {
-            min: 0,
-            max: 5,
-            ticks: {
-              stepSize: 1,
-              color: '#333',
-              font: { size: 24 }
-            },
-            pointLabels: {
-              display: showLabels,
-              color: (ctx) => labelColors[ctx.chart.data.labels[ctx.index]],
-              font: { size: 14, weight: 'bold' }
-            },
-            grid: {
-              color: '#ccc',
-              circular: true
-            },
-            angleLines: { color: '#ccc' }
-          }
-        },
-        layout: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
-        elements: {
-          line: { borderWidth: 3, tension: 0 },
-          point: { radius: 5 * scaleMultiplier }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: { position: 'nearest' }
+    #chartContainer::before {
+      content: "";
+      position: absolute;
+      top: -5%;
+      left: -5%;
+      width: 110%;
+      height: 110%;
+      background: url("https://i.postimg.cc/153BYDCs/ACT-radar-background-3.png") no-repeat center center;
+      background-size: contain;
+      z-index: 0;
+    }
+
+    canvas#radarChart {
+      position: absolute;
+      top: 25%;
+      left: 25%;
+      width: 50% !important;
+      height: 50% !important;
+      background-color: transparent !important;
+      z-index: 10;
+    }
+
+    #downloadBtn, #updateBtn {
+      margin-top: 10px;
+      padding: 8px 12px;
+      font-size: 14px;
+      display: inline-block;
+    }
+
+    .input-row {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+    }
+
+    .input-row label {
+      margin-bottom: 4px;
+    }
+
+    .input-row input,
+    .input-row select {
+      width: 100%;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 0.9em;
+      margin-top: 2px;
+    }
+
+    .success-message {
+      color: green;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center">ACT Radar</h2>
+
+  <div id="formContainer">
+    <div class="input-row">
+      <label for="userEmail">Your Email:</label>
+      <input type="email" id="userEmail" name="userEmail" required />
+      <div id="emailError" class="error-message"></div>
+    </div>
+    <div class="input-row">
+      <label for="projectName">Project Name:</label>
+      <input type="text" id="projectName" name="projectName" />
+      <div id="projectError" class="error-message"></div>
+    </div>
+    <form id="scoreForm"></form>
+    <button id="updateBtn">Update Chart</button>
+    <button id="downloadBtn">Download Picture</button>
+    <div id="submissionSuccess" class="success-message"></div>
+  </div>
+
+  <div id="chartContainer">
+    <canvas id="radarChart"></canvas>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const labels = [
+        "Capability", "Motivation", "Connectivity", "Segmentation",
+        "Influence", "Norms", "Processes", "Governance", "Resources"
+      ];
+
+      const labelColors = {
+        "Capability": "#F4B5A1",
+        "Motivation": "#F4B5A1",
+        "Connectivity": "#90A4B5",
+        "Segmentation": "#90A4B5",
+        "Influence": "#90A4B5",
+        "Norms": "#93AB94",
+        "Processes": "#93AB94",
+        "Governance": "#93AB94",
+        "Resources": "#93AB94"
+      };
+
+      const form = document.getElementById("scoreForm");
+      labels.forEach(label => {
+        const row = document.createElement("div");
+        row.className = "input-row";
+        const select = document.createElement("select");
+        select.name = label;
+        for (let i = 1; i <= 5; i++) {
+          const opt = document.createElement("option");
+          opt.value = i;
+          opt.textContent = i;
+          select.appendChild(opt);
         }
+        const labelEl = document.createElement("label");
+        labelEl.textContent = label;
+        labelEl.htmlFor = label;
+        row.appendChild(labelEl);
+        row.appendChild(select);
+        form.appendChild(row);
+      });
+
+      const ctx = document.getElementById("radarChart").getContext("2d");
+      let radarChart;
+
+      function getScoresFromForm() {
+        return labels.map(label => parseFloat(document.querySelector(`select[name='${label}']`).value));
       }
+
+      function drawChart(scores, showLabels = false, scaleMultiplier = 1) {
+        if (radarChart) radarChart.destroy();
+        radarChart = new Chart(ctx, {
+          type: 'radar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Your Scores',
+              data: scores,
+              fill: true,
+              backgroundColor: 'rgba(68, 68, 68, 0.3)',
+              borderColor: '#444444',
+              pointBackgroundColor: labels.map(label => labelColors[label]),
+              pointBorderColor: '#444444',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: labels.map(label => labelColors[label])
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                min: 0,
+                max: 5,
+                ticks: {
+                  stepSize: 1,
+                  color: '#333',
+                  font: { size: 24 }
+                },
+                pointLabels: {
+                  display: showLabels,
+                  color: (ctx) => labelColors[ctx.chart.data.labels[ctx.index]],
+                  font: { size: 14, weight: 'bold' }
+                },
+                grid: {
+                  color: '#ccc',
+                  circular: true
+                },
+                angleLines: { color: '#ccc' }
+              }
+            },
+            layout: { padding: 0 },
+            elements: {
+              line: { borderWidth: 3, tension: 0 },
+              point: { radius: 5 * scaleMultiplier }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: { position: 'nearest' }
+            }
+          }
+        });
+      }
+
+      drawChart(getScoresFromForm());
+
+      document.getElementById("updateBtn").addEventListener("click", function (e) {
+        e.preventDefault();
+
+        const email = document.getElementById("userEmail").value.trim();
+        const project = document.getElementById("projectName").value.trim();
+        const scores = getScoresFromForm();
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        document.getElementById("emailError").textContent = "";
+        document.getElementById("projectError").textContent = "";
+        document.getElementById("submissionSuccess").textContent = "";
+
+        let hasError = false;
+
+        if (!emailPattern.test(email)) {
+          document.getElementById("emailError").textContent = "Please enter a valid email address.";
+          hasError = true;
+        }
+
+        if (!project) {
+          document.getElementById("projectError").textContent = "Please enter a project name.";
+          hasError = true;
+        }
+
+        if (hasError) return;
+
+        drawChart(scores);
+
+        const params = new URLSearchParams();
+        params.append("userEmail", email);
+        params.append("projectName", project);
+        labels.forEach((label, i) => {
+          params.append(label, scores[i]);
+        });
+
+        fetch("https://script.google.com/macros/s/AKfycbysOTAgcHzVotjV3IuN5FFOH_hjccBNofymLv9kglrCzVkRnCG_Vy1fL_Vd10BLuj1G/exec", {
+          method: "POST",
+          mode: "no-cors",
+          body: params
+        });
+
+        document.getElementById("submissionSuccess").textContent = "Your scores have been submitted!";
+      });
+
+      document.getElementById("downloadBtn").addEventListener("click", function (e) {
+        e.preventDefault();
+        const originalScores = getScoresFromForm();
+        const scaledScores = originalScores.map(score => score * 1.3);
+        drawChart(scaledScores, true, 1.5);
+
+        setTimeout(() => {
+          const chartCanvas = document.getElementById("radarChart");
+
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = chartCanvas.width;
+          tempCanvas.height = chartCanvas.height;
+          const tempCtx = tempCanvas.getContext("2d");
+
+          tempCtx.fillStyle = "#ffffff";
+          tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+          tempCtx.drawImage(chartCanvas, 0, 0);
+
+          const link = document.createElement("a");
+          link.download = "radar_chart.png";
+          link.href = tempCanvas.toDataURL("image/png");
+          link.click();
+
+          drawChart(originalScores, false);
+        }, 300);
+      });
     });
-  }
-
-  drawChart(getScoresFromForm());
-
-  document.getElementById("updateBtn").addEventListener("click", function (e) {
-    e.preventDefault();
-
-    const email = document.getElementById("userEmail").value.trim();
-    const project = document.getElementById("projectName").value.trim();
-    const scores = getScoresFromForm();
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    // Clear previous messages
-    document.getElementById("emailError").textContent = "";
-    document.getElementById("projectError").textContent = "";
-    document.getElementById("submissionSuccess")?.remove();
-
-    let hasError = false;
-
-    if (!emailPattern.test(email)) {
-      document.getElementById("emailError").textContent = "Please enter a valid email address.";
-      hasError = true;
-    }
-
-    if (!project) {
-      document.getElementById("projectError").textContent = "Please enter a project name.";
-      hasError = true;
-    }
-
-    if (hasError) return;
-
-    drawChart(scores);
-
-    const params = new URLSearchParams();
-    params.append("userEmail", email);
-    params.append("projectName", project);
-    labels.forEach((label, i) => {
-      params.append(label, scores[i]);
-    });
-
-    fetch("https://script.google.com/macros/s/AKfycbysOTAgcHzVotjV3IuN5FFOH_hjccBNofymLv9kglrCzVkRnCG_Vy1fL_Vd10BLuj1G/exec", {
-      method: "POST",
-      mode: "no-cors",
-      body: params
-    });
-
-    const successDiv = document.createElement("div");
-    successDiv.id = "submissionSuccess";
-    successDiv.style.color = "green";
-    successDiv.style.fontSize = "0.9em";
-    successDiv.style.marginTop = "10px";
-    successDiv.textContent = "Your scores have been submitted!";
-    document.getElementById("formContainer").appendChild(successDiv);
-  });
-
-  document.getElementById("downloadBtn").addEventListener("click", function (e) {
-    e.preventDefault();
-    const originalScores = getScoresFromForm();
-    const scaledScores = originalScores.map(score => score * 1.3);
-    drawChart(scaledScores, true, 1.5);
-
-    setTimeout(() => {
-      const chartCanvas = document.getElementById("radarChart");
-
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = chartCanvas.width;
-      tempCanvas.height = chartCanvas.height;
-      const tempCtx = tempCanvas.getContext("2d");
-
-      tempCtx.fillStyle = "#ffffff";
-      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-      tempCtx.drawImage(chartCanvas, 0, 0);
-
-      const link = document.createElement("a");
-      link.download = "radar_chart.png";
-      link.href = tempCanvas.toDataURL("image/png");
-      link.click();
-
-      drawChart(originalScores, false);
-    }, 300);
-  });
-</script>
+  </script>
+</body>
+</html>
