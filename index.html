@@ -202,10 +202,14 @@
       const scores = getScoresFromForm();
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-      if (!emailPattern.test(email) || !project) {
-        alert("Please enter a valid email address and a project name.");
-        return;
-      }
+// Clear previous messages
+document.getElementById("emailError").textContent = "";
+
+if (!emailPattern.test(email)) {
+  document.getElementById("emailError").textContent = "Please enter a valid email address.";
+  return;
+}
+
 
       drawChart(scores);
 
